@@ -146,8 +146,12 @@ class RmaLineMakeSaleOrderItem(models.TransientModel):
     free_of_charge = fields.Boolean(string='Free of Charge')
 
     def compute_line_id(self):
-        if self.env.context.get('active_ids', False):
-            self.line_id = self.env.context['active_ids'][0]
+        rma_line_obj = self.env['rma.order.line']
+        if not self.env.context['active_ids']:
+            return
+        rma_line_ids = self.env.context['active_ids'] or []
+        lines = rma_line_obj.browse(rma_line_ids)
+        self.line_id = lines[0]
 
     @api.onchange('product_id')
     def onchange_product_id(self):
