@@ -59,16 +59,16 @@ class RmaLineMakeSaleOrder(models.TransientModel):
         return res
 
     @api.model
-    def _prepare_sale_order(self, out_warehouse, company):
+    def _prepare_sale_order(self, line):
         if not self.partner_id:
             raise exceptions.Warning(
                 _('Enter a customer.'))
         customer = self.partner_id
         data = {
-            'origin': '',
+            'origin': line.name,
             'partner_id': customer.id,
-            'warehouse_id': out_warehouse.id,
-            'company_id': company.id,
+            'warehouse_id': line.out_warehouse_id.id,
+            'company_id': line.company_id.id,
             }
         return data
 
@@ -103,9 +103,9 @@ class RmaLineMakeSaleOrder(models.TransientModel):
             if self.sale_order_id:
                 sale = self.sale_order_id
             if not sale:
-                po_data = self._prepare_sale_order(line.out_warehouse_id,
-                                                   line.company_id)
+                po_data = self._prepare_sale_order(line)
                 sale = sale_obj.create(po_data)
+                sale.name = sale.name + ' - ' + line.name
 
             so_line_data = self._prepare_sale_order_line(sale, item)
             so_line_obj.create(so_line_data)
