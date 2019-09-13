@@ -20,7 +20,7 @@ class SaleOrder(models.Model):
 
     def compute_rma_line(self):
         for so in self:
-            so.rma_line_ids = so.order_line.rma_line_id
+            so.rma_line_ids = so.mapped('order_line.rma_line_id')
 
     @api.multi
     def action_view_rma(self):

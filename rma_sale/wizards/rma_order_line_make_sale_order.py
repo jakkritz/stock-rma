@@ -14,7 +14,7 @@ class RmaLineMakeSaleOrder(models.TransientModel):
         domain=[('customer', '=', True)])
     item_ids = fields.One2many(
         comodel_name='rma.order.line.make.sale.order.item',
-        inverse_name='wiz_id', string='Items')
+        inverse_name='wiz_id', string='Items', readonly=False)
     sale_order_id = fields.Many2one(
         comodel_name='sale.order', string='Sales Order', required=False,
         domain=[('state', '=', 'draft')])
@@ -130,7 +130,8 @@ class RmaLineMakeSaleOrderItem(models.TransientModel):
     wiz_id = fields.Many2one(
         comodel_name='rma.order.line.make.sale.order', string='Wizard')
     line_id = fields.Many2one(
-        comodel_name='rma.order.line', string='RMA Line')
+        comodel_name='rma.order.line', string='RMA Line',
+        compute='compute_line_id')
     rma_id = fields.Many2one(
         comodel_name='rma.order', related='line_id.rma_id', readonly=False)
     product_id = fields.Many2one(
@@ -143,3 +144,12 @@ class RmaLineMakeSaleOrderItem(models.TransientModel):
     out_warehouse_id = fields.Many2one(
         comodel_name='stock.warehouse', string='Outbound Warehouse')
     free_of_charge = fields.Boolean(string='Free of Charge')
+
+    def compute_line_id(self):
+        if self.env.context.get('active_ids', False):
+            self.line_id = self.env.context['active_ids'][0]
+
+    @api.onchange('product_id')
+    def onchange_product_id(self):
+        if self.product_id:
+            self.name = self.product_id.name
