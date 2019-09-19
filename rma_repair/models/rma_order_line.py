@@ -15,10 +15,12 @@ class RmaOrderLine(models.Model):
             if line.repair_type == 'no':
                 line.qty_to_repair = 0.0
             elif line.repair_type == 'ordered':
-                qty = line._get_rma_repaired_qty()
+                qty = line._get_rma_repaired_qty() + \
+                    line._get_rma_under_repair_qty()
                 line.qty_to_repair = line.product_qty - qty
             elif line.repair_type == 'received':
-                qty = line._get_rma_repaired_qty()
+                qty = line._get_rma_repaired_qty() + \
+                    line._get_rma_under_repair_qty()
                 line.qty_to_repair = line.qty_received - qty
             else:
                 line.qty_to_repair = 0.0
@@ -28,6 +30,12 @@ class RmaOrderLine(models.Model):
     def _compute_qty_repaired(self):
         for line in self:
             line.qty_repaired = line._get_rma_repaired_qty()
+
+    @api.depends('repair_ids', 'repair_type', 'repair_ids.state',
+                 'qty_to_receive')
+    def _compute_qty_under_repair(self):
+        for line in self:
+            line.qty_under_repair = line._get_rma_under_repair_qty()
 
     @api.depends('repair_ids')
     def _compute_repair_count(self):
@@ -42,6 +50,11 @@ class RmaOrderLine(models.Model):
         string='Qty To Repair', copy=False,
         digits=dp.get_precision('Product Unit of Measure'),
         readonly=True, compute='_compute_qty_to_repair',
+        store=True)
+    qty_under_repair = fields.Float(
+        string='Qty Under Repair', copy=False,
+        digits=dp.get_precision('Product Unit of Measure'),
+        readonly=True, compute='_compute_qty_under_repair',
         store=True)
     qty_repaired = fields.Float(
         string='Qty Repaired', copy=False,
@@ -78,7 +91,20 @@ class RmaOrderLine(models.Model):
         self.ensure_one()
         qty = 0.0
         for repair in self.repair_ids.filtered(
-                lambda p: p.state != 'cancel'):
+                lambda p: p.state == 'done'):
+            repair_qty = self.uom_id._compute_quantity(
+                repair.product_qty,
+                repair.product_uom,
+            )
+            qty += repair_qty
+        return qty
+
+    @api.multi
+    def _get_rma_under_repair_qty(self):
+        self.ensure_one()
+        qty = 0.0
+        for repair in self.repair_ids.filtered(
+                lambda p: p.state not in ('draft', 'cancel', 'done')):
             repair_qty = self.uom_id._compute_quantity(
                 repair.product_qty,
                 repair.product_uom,
