@@ -213,4 +213,6 @@ class TestRmaRepair(common.SingleTransactionCase):
         })
         make_repair.make_repair_order()
         rma.repair_ids.action_repair_confirm()
+        rma.repair_ids.action_repair_start()
+        rma.repair_ids.action_repair_end()
         self.assertEqual(rma.qty_to_deliver, 1.0)
