@@ -1,7 +1,7 @@
 # Copyright 2017 Eficent Business and IT Consulting Services S.L.
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html)
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class RepairOrder(models.Model):
@@ -13,3 +13,4 @@ class RepairOrder(models.Model):
     under_warranty = fields.Boolean(
         related='rma_line_id.under_warranty', readonly=False,
     )
+    invoice_status = fields.Selection(related='invoice_id.state')
