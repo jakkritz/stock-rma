@@ -143,5 +143,5 @@ class RmaOrderLine(models.Model):
         res = super(RmaOrderLine, self)._compute_qty_to_deliver()
         for rec in self.filtered(lambda l: l.delivery_policy == 'repair'):
             rec.qty_to_deliver = rec.qty_repaired - rec.qty_delivered - \
-                 rec.qty_to_pay
+                rec.qty_to_pay
         return res
